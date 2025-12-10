@@ -7,7 +7,7 @@ namespace Antigravity.Movement
     /// <summary>
     /// Default movement module handling ground movement, jumping, and basic physics.
     /// <para>
-    /// Now simplified by delegating jump logic to JumpHandler.
+    /// Simplified DefaultMovement using composition for Jump Logic.
     /// </para>
     /// </summary>
     public class DefaultMovement : MovementModuleBase
@@ -16,7 +16,8 @@ namespace Antigravity.Movement
 
         private readonly PlayerInputHandler _input;
         private readonly Transform _meshRoot;
-        private readonly JumpHandler _jumpHandler; // COMPOSITION! 🧩
+        private readonly JumpHandler _jumpHandler;
+
         #endregion
 
         #region State
@@ -43,8 +44,6 @@ namespace Antigravity.Movement
         {
             _input = input;
             _meshRoot = meshRoot;
-
-            // Initialize Jump Handler
             _jumpHandler = new JumpHandler(motor, config);
         }
 
@@ -54,13 +53,12 @@ namespace Antigravity.Movement
 
         public override void OnActivated()
         {
-            // Reset jump state when module activates
             _jumpHandler.OnActivated();
         }
 
         public override void UpdatePhysics(ref Vector3 currentVelocity, float deltaTime)
         {
-            // 1. Movement (ground or air)
+            // 1. Movement
             if (Motor.GroundingStatus.IsStableOnGround)
             {
                 ApplyGroundMovement(ref currentVelocity, deltaTime);
@@ -70,16 +68,16 @@ namespace Antigravity.Movement
                 ApplyAirMovement(ref currentVelocity, deltaTime);
             }
 
-            // 2. Jump logic (Delegated!)
+            // 2. Jump (Delegated to Scalable Handler)
             _jumpHandler.ProcessJump(ref currentVelocity, deltaTime);
 
-            // 3. Internal velocity (knockback, forces, etc.)
+            // 3. Internal forces
             ApplyInternalVelocity(ref currentVelocity);
         }
 
         public override void AfterUpdate(float deltaTime)
         {
-            // 1. Jump cleanup (Delegated!)
+            // 1. Jump cleanup
             _jumpHandler.PostUpdate(deltaTime);
 
             // 2. Crouch handling

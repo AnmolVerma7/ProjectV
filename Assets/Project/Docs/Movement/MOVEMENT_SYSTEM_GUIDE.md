@@ -130,14 +130,22 @@ _movementSystem.ActivateModule<WallRunMovement>();
 _movementSystem.ActivateDefaultModule();
 ```
 
+#### `JumpHandler` Component
+
+Encapsulates all jump logic (Composition Pattern):
+
+- **Scalable**: Supports Triple/Quadruple jumps via counters
+- **Classified**: Uses `JumpType` enum (Ground, Air, Wall, Coyote)
+- **Event-Driven**: `OnJumpPerformed` event for easy Audio/VFX integration
+
 #### `DefaultMovement` Module
 
-Contains ALL default physics:
+Inherits from `MovementModuleBase` and composes `JumpHandler`:
 
 - Ground movement (stable surfaces)
 - Air movement (acceleration, drag, gravity)
-- Jump system (single, double, wall, buffering, coyote)
 - Crouch/uncrouch with collision detection
+- Delegates jumping to `JumpHandler`
 
 **Public API**:
 
@@ -321,7 +329,12 @@ Movement modes are interchangeable strategies. The MovementSystem switches betwe
 
 **Real-world**: Like switching weapons in a game - each weapon is a complete combat strategy.
 
-### 2. Delegation Pattern
+### 2. Composition Pattern
+
+`DefaultMovement` doesn't implement jumping itself - it _composes_ a `JumpHandler`.
+**Benefit**: Reusable components! `WallRunMovement` can also use `JumpHandler`.
+
+### 3. Delegation Pattern
 
 PlayerController doesn't do physics - it delegates to experts.
 
@@ -357,14 +370,17 @@ public DefaultMovement(
 
 **Changed**:
 
-- `PlayerController`: 523 → 240 lines (54% reduction!)
-- `UpdateVelocity`: 145 → 3 lines (delegates to system)
+- 3-line UpdateVelocity (just delegates)
+- Adding wallrun = create new file (zero risk!)
 
-**Result**:
+### [2024-12-09] Jump System Refactor 🦘
 
-- Adding new abilities now takes 30 min vs 2 hours
-- Zero risk to existing movement
-- Industry-standard architecture
+**Composition & Scalability Update**:
+
+- Created `JumpHandler` (handles all jump logic)
+- Created `MovementModuleBase` (shared dependencies)
+- Refactored `DefaultMovement` to use Composition
+- **Added**: Triple Jump support, JumpType enums, OnJump events
 
 ### [2024-12-04] Input & Config Extraction
 
