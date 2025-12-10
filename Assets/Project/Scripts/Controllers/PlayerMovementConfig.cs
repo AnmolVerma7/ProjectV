@@ -56,6 +56,11 @@ namespace Antigravity.Controllers
         )]
         public bool ToggleSlide = false;
 
+        [Tooltip(
+            "Time (seconds) required to hold Crouch before slide starts (only for Hold Logic)."
+        )]
+        public float SlideHoldDelay = 0.2f;
+
         [Tooltip("Base slide speed before slope modifiers.")]
         public float BaseSlideSpeed = 12f;
 

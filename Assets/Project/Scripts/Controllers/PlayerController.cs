@@ -150,7 +150,23 @@ namespace Antigravity.Controllers
             }
 
             // Handle Slide (Sprint + Crouch = Slide)
-            if (InputHandler.CrouchJustActivated)
+            // Handle Slide (Sprint + Crouch = Slide)
+            bool wantSlide = false;
+            if (Config.ToggleSlide)
+            {
+                // Toggle Mode: Instant trigger on press
+                wantSlide = InputHandler.CrouchJustActivated;
+            }
+            else
+            {
+                // Hold Mode: Only trigger after hold delay (prevents accidental slides)
+                // We check IsCrouching to ensure button is still down
+                wantSlide =
+                    InputHandler.IsCrouching
+                    && InputHandler.CrouchHoldDuration >= Config.SlideHoldDelay;
+            }
+
+            if (wantSlide)
             {
                 _defaultMovement.RequestSlide();
             }

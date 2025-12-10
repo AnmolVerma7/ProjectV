@@ -98,15 +98,18 @@ namespace Antigravity.Controllers
         /// <summary>True for ONE frame when sprint became active.</summary>
         public bool SprintJustActivated { get; private set; }
 
+        /// <summary>True for ONE frame when crouch became active.</summary>
+        public bool CrouchJustActivated { get; set; }
+
+        /// <summary>How long (in seconds) the crouch button has been held down.</summary>
+        public float CrouchHoldDuration { get; private set; }
+
         /// <summary>True for ONE frame when dash is pressed.</summary>
         public bool DashJustActivated => _dashTriggered;
 
         /// <summary>True if crouch is currently active (handles both Toggle and Hold modes).</summary>
         public bool IsCrouching =>
             (_config != null && _config.ToggleCrouch) ? _crouchToggledOn : _crouchPressed;
-
-        /// <summary>True for ONE frame when crouch became active.</summary>
-        public bool CrouchJustActivated { get; private set; }
 
         #endregion
 
@@ -220,6 +223,16 @@ namespace Antigravity.Controllers
                 {
                     _sprintToggledOn = false;
                 }
+            }
+
+            // Track hold durations
+            if (_crouchPressed)
+            {
+                CrouchHoldDuration += UnityEngine.Time.deltaTime;
+            }
+            else
+            {
+                CrouchHoldDuration = 0f;
             }
         }
 
