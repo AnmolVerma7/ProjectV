@@ -32,6 +32,7 @@ namespace Antigravity.Feedback
         public Color SprintColor = Color.cyan;
         public Color DashColor = Color.red;
         public Color SlideColor = new Color(1f, 0.65f, 0f); // Orange
+        public Color MantleColor = new Color(0.5f, 0f, 1f); // Purple
 
         [Tooltip("How long the red dash color persists.")]
         public float DashVisualDuration = 0.5f;
@@ -115,8 +116,10 @@ namespace Antigravity.Feedback
             {
                 Color targetColor = NormalColor;
 
-                // Priority: Slide > Dash > Sprint
-                if (_defaultMovement != null && _defaultMovement.IsSliding)
+                // Priority: Mantle > Slide > Dash > Sprint
+                if (_defaultMovement != null && _defaultMovement.IsMantling)
+                    targetColor = MantleColor;
+                else if (_defaultMovement != null && _defaultMovement.IsSliding)
                     targetColor = SlideColor;
                 else if (_dashTimer > 0)
                     targetColor = DashColor;

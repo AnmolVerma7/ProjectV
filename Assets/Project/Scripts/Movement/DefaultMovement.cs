@@ -19,6 +19,7 @@ namespace Antigravity.Movement
         private readonly JumpHandler _jumpHandler; // Composition: Handles all jump logic
         private readonly SlideHandler _slideHandler; // Composition: Handles all slide logic
         private readonly DashHandler _dashHandler; // Composition: Handles all dash logic
+        private readonly MantleHandler _mantleHandler; // Composition: Handles ledge grab/mantle logic
         #endregion
 
         #region State
@@ -54,6 +55,7 @@ namespace Antigravity.Movement
                 TryUncrouch
             );
             _dashHandler = new DashHandler(config);
+            _mantleHandler = new MantleHandler(motor, config);
         }
 
         #endregion
@@ -65,6 +67,7 @@ namespace Antigravity.Movement
             _jumpHandler.OnActivated();
             _slideHandler.OnActivated();
             _dashHandler.OnActivated();
+            _mantleHandler.OnActivated();
         }
 
         public override void OnDashStarted()
@@ -100,6 +103,19 @@ namespace Antigravity.Movement
 
         public override void UpdatePhysics(ref Vector3 currentVelocity, float deltaTime)
         {
+            // 0. Mantle override (takes full control when active)
+            if (_mantleHandler.IsActive)
+            {
+                // Check for mantle confirm while hanging
+                if (_mantleHandler.CurrentState == MantleState.Hanging && _input.JumpDown)
+                {
+                    _mantleHandler.RequestMantle();
+                }
+
+                _mantleHandler.OverrideVelocity(ref currentVelocity);
+                return;
+            }
+
             // 1. Movement
             if (Motor.GroundingStatus.IsStableOnGround)
             {
@@ -110,10 +126,17 @@ namespace Antigravity.Movement
                 ApplyAirMovement(ref currentVelocity, deltaTime);
             }
 
-            // 2. Jump (Delegated to Scalable Handler)
+            // 3. Jump (Delegated to Scalable Handler)
             _jumpHandler.ProcessJump(ref currentVelocity, deltaTime);
 
-            // 3. Internal forces
+            // 4. Mantle grab check (triggered by jump near ledge, AFTER jump processes)
+            if (_jumpHandler.JumpConsumedThisUpdate && _mantleHandler.CanGrab())
+            {
+                Debug.Log("🧗 GRABBING LEDGE!");
+                _mantleHandler.TryGrab();
+            }
+
+            // 4. Internal forces
             ApplyInternalVelocity(ref currentVelocity);
         }
 
@@ -122,13 +145,16 @@ namespace Antigravity.Movement
             // 1. Jump cleanup
             _jumpHandler.PostUpdate(deltaTime);
 
-            // 2. Slide entry/exit handling
+            // 2. Mantle state machine
+            _mantleHandler.Update(deltaTime);
+
+            // 3. Slide entry/exit handling
             _slideHandler.HandleSlide();
 
-            // 3. Crouch handling
+            // 4. Crouch handling
             HandleCrouch();
 
-            // 4. Dash charge logic
+            // 5. Dash charge logic
             _dashHandler.UpdateCharges(deltaTime);
         }
 
@@ -163,6 +189,16 @@ namespace Antigravity.Movement
         public int CurrentDashCharges => _dashHandler.CurrentDashCharges;
 
         public bool IsSliding => _slideHandler.IsSliding;
+
+        public bool IsMantling => _mantleHandler.IsActive;
+
+        /// <summary>
+        /// Requests mantle confirmation while hanging.
+        /// </summary>
+        public void RequestMantleConfirm()
+        {
+            _mantleHandler.RequestMantle();
+        }
 
         #endregion
 

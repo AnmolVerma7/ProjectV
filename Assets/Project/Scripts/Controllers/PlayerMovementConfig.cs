@@ -153,6 +153,31 @@ namespace Antigravity.Controllers
         // ═══════════════════════════════════════════════════════════════════════
         // PHYSICS
         // ═══════════════════════════════════════════════════════════════════════
+        // MANTLE
+        // ═══════════════════════════════════════════════════════════════════════
+
+        [Header("Mantle")]
+        [Tooltip("Maximum horizontal distance from ledge to allow grab.")]
+        public float MaxGrabDistance = 0.3f;
+
+        [Tooltip("Minimum ledge height that can be mantled.")]
+        public float MinLedgeHeight = 1.0f;
+
+        [Tooltip("Maximum ledge height that can be mantled.")]
+        public float MaxLedgeHeight = 2.5f;
+
+        [Tooltip("Duration of the mantle animation (seconds).")]
+        public float MantleDuration = 0.4f;
+
+        [Tooltip("Time to hang before auto-mantle (0 = instant).")]
+        public float HangDuration = 0f;
+
+        [Tooltip("Curve for smooth mantle motion (0-1 input, 0-1 output).")]
+        public AnimationCurve MantleCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // PHYSICS
+        // ═══════════════════════════════════════════════════════════════════════
 
         [Header("Physics")]
         [Tooltip("If true, character orients to gravity direction.")]

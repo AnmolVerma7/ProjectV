@@ -42,6 +42,11 @@ namespace Antigravity.Movement
         // Events (Hook up Audio/VFX here!)
         public event Action<JumpType> OnJumpPerformed;
 
+        /// <summary>
+        /// True if a jump was executed this physics update.
+        /// </summary>
+        public bool JumpConsumedThisUpdate => _jumpedThisFrame;
+
         public JumpHandler(KinematicCharacterMotor motor, PlayerMovementConfig config)
         {
             _motor = motor;

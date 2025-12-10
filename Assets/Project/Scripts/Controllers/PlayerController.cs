@@ -174,8 +174,16 @@ namespace Antigravity.Controllers
             // Handle Jump Request
             if (InputHandler.JumpDown)
             {
-                // Only default movement cares about jump triggers usually
-                _defaultMovement.RequestJump();
+                // If hanging from a ledge, confirm mantle instead of jumping
+                if (_defaultMovement.IsMantling)
+                {
+                    _defaultMovement.RequestMantleConfirm();
+                }
+                else
+                {
+                    // Only default movement cares about jump triggers usually
+                    _defaultMovement.RequestJump();
+                }
             }
 
             // Update HSM (observation only)
