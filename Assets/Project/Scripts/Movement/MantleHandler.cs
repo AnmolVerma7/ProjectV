@@ -260,10 +260,35 @@ namespace Antigravity.Movement
             // Evaluate curve for smooth motion
             float curveValue = _config.MantleCurve.Evaluate(progress);
 
-            // Lerp between grab position and target
-            Vector3 targetPosition = Vector3.Lerp(_grabPosition, _mantleTargetPosition, curveValue);
+            // Arc-based motion: Move UP first (0-60% of motion), then FORWARD (40-100%)
+            // This creates a natural "pull up then climb over" feel like Fortnite
 
-            // Use MoveCharacter instead of SetPosition for collision detection
+            // Vertical progress: accelerated (completes by ~70% of total time)
+            float verticalProgress = Mathf.Clamp01(curveValue * 1.4f);
+
+            // Horizontal progress: delayed start (begins at ~50% of total time) and smoothed
+            float horizontalRaw = Mathf.Clamp01((curveValue - 0.5f) / 0.5f);
+            // Apply smoothstep for eased horizontal motion
+            float horizontalProgress = horizontalRaw * horizontalRaw * (3f - 2f * horizontalRaw);
+
+            // Calculate vertical position (from grab Y to target Y)
+            float currentY = Mathf.Lerp(_grabPosition.y, _mantleTargetPosition.y, verticalProgress);
+
+            // Calculate horizontal position (from grab XZ to target XZ)
+            float currentX = Mathf.Lerp(
+                _grabPosition.x,
+                _mantleTargetPosition.x,
+                horizontalProgress
+            );
+            float currentZ = Mathf.Lerp(
+                _grabPosition.z,
+                _mantleTargetPosition.z,
+                horizontalProgress
+            );
+
+            Vector3 targetPosition = new Vector3(currentX, currentY, currentZ);
+
+            // Use MoveCharacter for collision detection
             _motor.MoveCharacter(targetPosition);
         }
 
