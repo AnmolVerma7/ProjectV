@@ -87,7 +87,7 @@ namespace Antigravity.Movement
                     forwardDirection,
                     out wallHit,
                     _config.MaxGrabDistance,
-                    Physics.DefaultRaycastLayers, // Use default layers for now
+                    _config.MantleLayers,
                     QueryTriggerInteraction.Ignore
                 )
             )
@@ -116,7 +116,7 @@ namespace Antigravity.Movement
                     -_motor.CharacterUp,
                     out ledgeHit,
                     _config.MaxLedgeHeight - _config.MinLedgeHeight,
-                    Physics.DefaultRaycastLayers, // Use default layers for now
+                    _config.MantleLayers,
                     QueryTriggerInteraction.Ignore
                 )
             )
@@ -156,7 +156,7 @@ namespace Antigravity.Movement
                 forwardDirection,
                 out wallHit,
                 _config.MaxGrabDistance,
-                Physics.DefaultRaycastLayers, // Use default layers for now
+                _config.MantleLayers,
                 QueryTriggerInteraction.Ignore
             );
 
@@ -168,7 +168,7 @@ namespace Antigravity.Movement
                 -_motor.CharacterUp,
                 out ledgeHit,
                 _config.MaxLedgeHeight - _config.MinLedgeHeight,
-                Physics.DefaultRaycastLayers, // Use default layers for now
+                _config.MantleLayers,
                 QueryTriggerInteraction.Ignore
             );
 

@@ -157,6 +157,11 @@ namespace Antigravity.Controllers
         // ═══════════════════════════════════════════════════════════════════════
 
         [Header("Mantle")]
+        [Tooltip(
+            "Layers to check for mantleable surfaces. Set to specific layers for optimization."
+        )]
+        public LayerMask MantleLayers = -1; // -1 = Everything
+
         [Tooltip("Maximum horizontal distance from ledge to allow grab.")]
         public float MaxGrabDistance = 0.3f;
 
