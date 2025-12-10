@@ -12,7 +12,11 @@ namespace Antigravity.Controllers
     /// </summary>
     public class PlayerMovementConfig : ScriptableObject
     {
-        [Header("Movement")]
+        // ═══════════════════════════════════════════════════════════════════════
+        // GROUND MOVEMENT
+        // ═══════════════════════════════════════════════════════════════════════
+
+        [Header("Ground Movement")]
         [Tooltip("Standard movement speed on ground.")]
         public float MaxStableMoveSpeed = 8f;
 
@@ -26,29 +30,31 @@ namespace Antigravity.Controllers
         public float MaxStableDistanceFromLedge = 5f;
 
         [Range(0f, 180f)]
+        [Tooltip("Max angle for stable ground (180 = any surface).")]
         public float MaxStableDenivelationAngle = 180f;
 
+        // ═══════════════════════════════════════════════════════════════════════
+        // SPRINT
+        // ═══════════════════════════════════════════════════════════════════════
+
         [Header("Sprint")]
+        [Tooltip("Movement speed while sprinting.")]
         public float MaxSprintMoveSpeed = 15f;
-
-        [Header("Dash")]
-        [Tooltip("Impulse force applied when dashing.")]
-        public float DashForce = 15f;
-
-        [Tooltip("Minimum time between dashes (prevents input spam).")]
-        public float DashIntermissionTime = 0.1f;
-
-        [Tooltip("Maximum number of dash charges available.")]
-        public int MaxDashCharges = 3;
-
-        [Tooltip("Time (seconds) to regenerate one dash charge.")]
-        public float DashReloadTime = 2.0f;
 
         [Tooltip("If true, pressing Sprint toggles it on/off. If false, hold is required.")]
         public bool ToggleSprint = true;
 
+        // ═══════════════════════════════════════════════════════════════════════
+        // CROUCH
+        // ═══════════════════════════════════════════════════════════════════════
+
+        [Header("Crouch")]
         [Tooltip("If true, pressing Crouch toggles it on/off. If false, hold is required.")]
-        public bool ToggleCrouch = false; // Default: Hold (traditional FPS)
+        public bool ToggleCrouch = false;
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SLIDE
+        // ═══════════════════════════════════════════════════════════════════════
 
         [Header("Slide")]
         [Tooltip(
@@ -57,9 +63,12 @@ namespace Antigravity.Controllers
         public bool ToggleSlide = false;
 
         [Tooltip(
-            "Time (seconds) required to hold Crouch before slide starts (only for Hold Logic)."
+            "Time (seconds) required to hold Crouch before slide starts (only for Hold Mode)."
         )]
         public float SlideHoldDelay = 0.2f;
+
+        [Tooltip("Minimum time (seconds) to wait before sliding again.")]
+        public float SlideCooldown = 0.5f;
 
         [Tooltip("Base slide speed before slope modifiers.")]
         public float BaseSlideSpeed = 12f;
@@ -76,32 +85,80 @@ namespace Antigravity.Controllers
         [Tooltip("Max slide duration in seconds (0 = infinite, speed-based only).")]
         public float MaxSlideDuration = 0f;
 
-        [Tooltip("Minimum time (seconds) to wait before sliding again.")]
-        public float SlideCooldown = 0.5f;
+        // ═══════════════════════════════════════════════════════════════════════
+        // DASH
+        // ═══════════════════════════════════════════════════════════════════════
+
+        [Header("Dash")]
+        [Tooltip("Impulse force applied when dashing.")]
+        public float DashForce = 15f;
+
+        [Tooltip("Minimum time between dashes (prevents input spam).")]
+        public float DashIntermissionTime = 0.1f;
+
+        [Tooltip("Maximum number of dash charges available.")]
+        public int MaxDashCharges = 3;
+
+        [Tooltip("Time (seconds) to regenerate one dash charge.")]
+        public float DashReloadTime = 2.0f;
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // AIR MOVEMENT
+        // ═══════════════════════════════════════════════════════════════════════
 
         [Header("Air Movement")]
+        [Tooltip("Maximum horizontal movement speed in air.")]
         public float MaxAirMoveSpeed = 10f;
+
+        [Tooltip("Acceleration speed when moving in air.")]
         public float AirAccelerationSpeed = 5f;
+
+        [Tooltip("Air drag coefficient (higher = more resistance).")]
         public float Drag = 0.1f;
 
+        // ═══════════════════════════════════════════════════════════════════════
+        // JUMPING
+        // ═══════════════════════════════════════════════════════════════════════
+
         [Header("Jumping")]
+        [Tooltip("Allow jumping while in slide state.")]
         public bool AllowJumpingWhenSliding = false;
+
+        [Tooltip("Allow double jump in air.")]
         public bool AllowDoubleJump = true;
+
+        [Tooltip("Allow jumping off walls.")]
         public bool AllowWallJump = true;
+
+        [Tooltip("Vertical speed applied on jump.")]
         public float JumpSpeed = 10f;
 
-        [Tooltip("Jump Buffer: How long (seconds) a jump input is remembered before landing")]
+        [Tooltip("Jump Buffer: How long (seconds) a jump input is remembered before landing.")]
         public float JumpPreGroundingGraceTime = 0.15f;
 
-        [Tooltip("Coyote Time: How long (seconds) after leaving ground you can still jump")]
+        [Tooltip("Coyote Time: How long (seconds) after leaving ground you can still jump.")]
         public float JumpPostGroundingGraceTime = 0.1f;
 
-        [Header("NoClip")]
-        public float NoClipMoveSpeed = 10f;
-        public float NoClipSharpness = 15;
+        // ═══════════════════════════════════════════════════════════════════════
+        // NOCLIP
+        // ═══════════════════════════════════════════════════════════════════════
 
-        [Header("Misc")]
+        [Header("NoClip")]
+        [Tooltip("Movement speed in noclip mode.")]
+        public float NoClipMoveSpeed = 10f;
+
+        [Tooltip("Acceleration sharpness in noclip mode.")]
+        public float NoClipSharpness = 15f;
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // PHYSICS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        [Header("Physics")]
+        [Tooltip("If true, character orients to gravity direction.")]
         public bool OrientTowardsGravity = false;
+
+        [Tooltip("Gravity vector applied to character.")]
         public Vector3 Gravity = new Vector3(0, -30f, 0);
     }
 }
