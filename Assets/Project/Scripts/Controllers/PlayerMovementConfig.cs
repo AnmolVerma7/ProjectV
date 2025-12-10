@@ -169,14 +169,11 @@ namespace Antigravity.Controllers
         [Tooltip("Duration of the mantle animation (seconds).")]
         public float MantleDuration = 0.55f;
 
-        [Tooltip("Time to hang before auto-mantle (0 = instant).")]
-        public float HangDuration = 0f;
-
-        [Tooltip("Curve for smooth mantle motion (0-1 input, 0-1 output). Default is smooth ease-in-out.")]
+        [Tooltip("Curve for overall mantle timing (controls arc motion smoothness).")]
         public AnimationCurve MantleCurve = new AnimationCurve(
-            new Keyframe(0f, 0f, 0f, 2f),      // Start slow, accelerate
+            new Keyframe(0f, 0f, 0f, 2f), // Start slow, accelerate
             new Keyframe(0.5f, 0.5f, 1.5f, 1.5f), // Middle: smooth transition
-            new Keyframe(1f, 1f, 2f, 0f)       // End slow, decelerate
+            new Keyframe(1f, 1f, 2f, 0f) // End slow, decelerate
         );
 
         // ═══════════════════════════════════════════════════════════════════════
