@@ -416,28 +416,61 @@ namespace Antigravity.Movement
         /// </summary>
         private void HandleSlide()
         {
-            // Entry: Sprint → Crouch (while moving and grounded)
-            // Uses _pendingSlideEntry which was cached in UpdatePhysics before LateUpdate reset
-            if (_pendingSlideEntry && !_isSliding)
-            {
-                TryEnterSlide(); // Only succeeds if conditions met
-            }
-
-            // Always reset the pending flag after check
+            // Capture pending request and reset flag immediately
+            bool requestedSlide = _pendingSlideEntry;
             _pendingSlideEntry = false;
 
-            // Exit conditions (already in slide)
+            // 1. Input-based Entry/Exit Triggers
+            if (requestedSlide)
+            {
+                if (!_isSliding)
+                {
+                    TryEnterSlide();
+                }
+                else if (Config.ToggleSlide)
+                {
+                    // Toggle Mode: Pressing crouch again cancels slide
+                    ExitSlide();
+                    return; // Stop processing to prevent immediate re-entry checks
+                }
+            }
+
+            // 2. Continuous State Checks (if still sliding)
             if (_isSliding)
             {
-                // Exit if jumping
+                // General Exit: Left Ground (Jumping/Falling)
                 if (Motor.GroundingStatus.FoundAnyGround == false)
                 {
                     ExitSlide();
+                    return;
                 }
-                // Exit if sprint released (unless crouch toggle keeps us crouched)
-                else if (!_input.IsSprinting)
+
+                if (Config.ToggleSlide)
                 {
-                    ExitSlide();
+                    // Toggle Mode Exits:
+                    // - Jump (Handled above)
+                    // - Crouch Press (Handled above)
+                    // - Speed Loss (Handled in UpdatePhysics/ApplyMovement or separate check?
+                    //   Actually speed loss exit is likely handled by logic that checks velocity,
+                    //   but let's rely on the MinSpeed check which presumably happens elsewhere or we add it here?)
+                    //   MinSpeed check handles auto-exit usually.
+                }
+                else
+                {
+                    // Hold Mode Exits:
+                    // - Crouch Release
+                    if (!_input.IsCrouching)
+                    {
+                        ExitSlide();
+                        return;
+                    }
+
+                    // - Sprint Release (Optional for Hold Mode, keeps it responsive)
+                    if (!_input.IsSprinting)
+                    {
+                        ExitSlide();
+                        return;
+                    }
                 }
             }
         }

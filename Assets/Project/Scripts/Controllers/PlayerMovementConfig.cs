@@ -51,6 +51,11 @@ namespace Antigravity.Controllers
         public bool ToggleCrouch = false; // Default: Hold (traditional FPS)
 
         [Header("Slide")]
+        [Tooltip(
+            "If true, slide continues until speed/sprint loss. If false, releasing crouch exits slide."
+        )]
+        public bool ToggleSlide = false;
+
         [Tooltip("Base slide speed before slope modifiers.")]
         public float BaseSlideSpeed = 12f;
 
