@@ -118,19 +118,10 @@ namespace Antigravity.Controllers
             }
 
             // Calculate Move Vector
-            Vector2 moveInput = InputHandler.MoveInput;
-            Vector3 cameraPlanarDirection = Vector3
-                .ProjectOnPlane(Camera.main.transform.forward, Vector3.up)
-                .normalized;
-            if (cameraPlanarDirection.sqrMagnitude == 0f)
-                cameraPlanarDirection = Vector3
-                    .ProjectOnPlane(Camera.main.transform.up, Vector3.up)
-                    .normalized;
-            Quaternion cameraPlanarRotation = Quaternion.LookRotation(
-                cameraPlanarDirection,
-                Vector3.up
+            _moveInputVector = CameraInputProcessor.GetCameraRelativeMoveVector(
+                InputHandler.MoveInput,
+                Camera.main
             );
-            _moveInputVector = cameraPlanarRotation * new Vector3(moveInput.x, 0, moveInput.y);
 
             // Pass input to ALL modules (since we don't know which is active easily without casting)
             // Or better: pass to both. They are cheap to set.
