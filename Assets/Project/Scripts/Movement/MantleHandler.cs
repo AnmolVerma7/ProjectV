@@ -64,14 +64,14 @@ namespace Antigravity.Movement
             // Must not be already mantling
             if (IsActive)
             {
-                Debug.Log("Mantle: Already active");
+                // Debug.Log("Mantle: Already active");
                 return false;
             }
 
             // Must be in air (not grounded)
             if (_motor.GroundingStatus.IsStableOnGround)
             {
-                Debug.Log("Mantle: Grounded");
+                // Debug.Log("Mantle: Grounded");
                 return false;
             }
 
@@ -92,7 +92,7 @@ namespace Antigravity.Movement
                 )
             )
             {
-                Debug.Log("Mantle: No wall detected");
+                // Debug.Log("Mantle: No wall detected");
                 return false;
             }
 
@@ -102,7 +102,7 @@ namespace Antigravity.Movement
             float wallAngle = Vector3.Angle(wallHit.normal, _motor.CharacterUp);
             if (wallAngle < 60f || wallAngle > 120f)
             {
-                Debug.Log($"Mantle: Wall not vertical enough ({wallAngle:F1}°)");
+                // Debug.Log($"Mantle: Wall not vertical enough ({wallAngle:F1}°)");
                 return false;
             }
 
@@ -121,7 +121,7 @@ namespace Antigravity.Movement
                 )
             )
             {
-                Debug.Log("Mantle: No ledge top found");
+                // Debug.Log("Mantle: No ledge top found");
                 return false;
             }
 
@@ -129,12 +129,12 @@ namespace Antigravity.Movement
             float surfaceAngle = Vector3.Angle(ledgeHit.normal, _motor.CharacterUp);
             if (surfaceAngle > 45f) // Max 45 degree slope
             {
-                Debug.Log($"Mantle: Surface too steep ({surfaceAngle:F1}°)");
+                // Debug.Log($"Mantle: Surface too steep ({surfaceAngle:F1}°)");
                 return false;
             }
 
             // Valid ledge found!
-            Debug.Log("✅ Mantle: VALID LEDGE DETECTED!");
+            // Debug.Log("✅ Mantle: VALID LEDGE DETECTED!");
             return true;
         }
 

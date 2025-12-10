@@ -132,7 +132,7 @@ namespace Antigravity.Movement
             // 4. Mantle grab check (triggered by jump near ledge, AFTER jump processes)
             if (_jumpHandler.JumpConsumedThisUpdate && _mantleHandler.CanGrab())
             {
-                Debug.Log("🧗 GRABBING LEDGE!");
+                // Debug.Log("🧗 GRABBING LEDGE!");
                 _mantleHandler.TryGrab();
             }
 
