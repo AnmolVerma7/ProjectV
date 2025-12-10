@@ -236,26 +236,8 @@ namespace Antigravity.Controllers
             if (TimeManager.Instance.IsRewinding)
                 return;
 
-            if (_moveInputVector != Vector3.zero && Config.OrientationSharpness > 0f)
-            {
-                Vector3 smoothedLookInputDirection = Vector3
-                    .Slerp(
-                        Motor.CharacterForward,
-                        _moveInputVector,
-                        1 - Mathf.Exp(-Config.OrientationSharpness * deltaTime)
-                    )
-                    .normalized;
-                currentRotation = Quaternion.LookRotation(
-                    smoothedLookInputDirection,
-                    Motor.CharacterUp
-                );
-            }
-            if (Config.OrientTowardsGravity)
-            {
-                currentRotation =
-                    Quaternion.FromToRotation((currentRotation * Vector3.up), -Config.Gravity)
-                    * currentRotation;
-            }
+            // PURE DELEGATION! 🎉
+            _movementSystem.UpdateRotation(ref currentRotation, deltaTime);
         }
 
         public void HandleVelocity(ref Vector3 currentVelocity, float deltaTime)

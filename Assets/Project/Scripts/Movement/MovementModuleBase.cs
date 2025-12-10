@@ -46,6 +46,12 @@ namespace Antigravity.Movement
         public abstract void UpdatePhysics(ref Vector3 velocity, float deltaTime);
 
         /// <summary>
+        /// Update rotation for this movement mode.
+        /// Must be implemented by derived classes.
+        /// </summary>
+        public abstract void UpdateRotation(ref Quaternion rotation, float deltaTime);
+
+        /// <summary>
         /// Called after character update (cleanup, state management).
         /// Must be implemented by derived classes.
         /// </summary>

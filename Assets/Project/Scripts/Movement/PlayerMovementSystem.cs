@@ -138,6 +138,18 @@ namespace Antigravity.Movement
         }
 
         /// <summary>
+        /// Delegate rotation update to the active module.
+        /// Called from PlayerController.UpdateRotation().
+        /// </summary>
+        public void UpdateRotation(ref Quaternion rotation, float deltaTime)
+        {
+            if (_activeModule == null)
+                return;
+
+            _activeModule.UpdateRotation(ref rotation, deltaTime);
+        }
+
+        /// <summary>
         /// Delegate after-update to the active module.
         /// Called from PlayerController.AfterCharacterUpdate().
         /// </summary>

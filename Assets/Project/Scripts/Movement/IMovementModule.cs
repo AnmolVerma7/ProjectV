@@ -18,6 +18,7 @@ namespace Antigravity.Movement
         /// <param name="velocity">Current velocity to modify.</param>
         /// <param name="deltaTime">Time since last update.</param>
         void UpdatePhysics(ref Vector3 velocity, float deltaTime);
+        void UpdateRotation(ref Quaternion rotation, float deltaTime);
 
         /// <summary>
         /// Called after character update (KCC's AfterCharacterUpdate).

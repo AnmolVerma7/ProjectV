@@ -39,6 +39,32 @@ namespace Antigravity.Movement
             Motor.SetGroundSolvingActivation(true);
         }
 
+        public override void UpdateRotation(ref Quaternion currentRotation, float deltaTime)
+        {
+            if (_moveInputVector != Vector3.zero && Config.OrientationSharpness > 0f)
+            {
+                Vector3 smoothedLookInputDirection = Vector3
+                    .Slerp(
+                        Motor.CharacterForward,
+                        _moveInputVector,
+                        1 - Mathf.Exp(-Config.OrientationSharpness * deltaTime)
+                    )
+                    .normalized;
+
+                currentRotation = Quaternion.LookRotation(
+                    smoothedLookInputDirection,
+                    Motor.CharacterUp
+                );
+            }
+
+            if (Config.OrientTowardsGravity)
+            {
+                currentRotation =
+                    Quaternion.FromToRotation((currentRotation * Vector3.up), -Config.Gravity)
+                    * currentRotation;
+            }
+        }
+
         public override void UpdatePhysics(ref Vector3 currentVelocity, float deltaTime)
         {
             // Vertical input (Space/Crouch)
