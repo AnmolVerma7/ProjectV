@@ -1,6 +1,6 @@
 # 🏃 Movement System Guide
 
-> **Last Updated**: December 2024 - Major refactor to modular architecture
+> **Last Updated**: December 10, 2024 - Logic-Free Controller Refactor
 
 Welcome to the **Antigravity Movement System**! This guide explains our modular, scalable architecture for player movement.
 
@@ -25,22 +25,25 @@ We follow the **Strategy Pattern** - movement modes (jump, wallrun, combat) are 
 
 ```
 ┌──────────────────────────┐
-│   PlayerController       │  ← Thin coordinator
-│   - Routes input         │
-│   - Delegates physics    │
+│    PlayerKCCAdapter      │  ← Physics Bridge
 └────────────┬─────────────┘
              │
              ▼
 ┌──────────────────────────┐
-│ PlayerMovementSystem     │  ← Traffic controller
-│ - Manages modules        │
-│ - Switches active module │
+│   PlayerController       │  ← Manager (No Math!)
+│   - Routes Input         │
+│   - Coordinates Logic    │
+└────────────┬─────────────┘
+             │
+             ▼
+┌──────────────────────────┐
+│ PlayerMovementSystem     │  ← Traffic Controller
 └────────────┬─────────────┘
              │
      ┌───────┼───────┐
      ▼       ▼       ▼
 ┌─────────┐ ┌─────────┐ ┌─────────┐
-│Default  │ │WallRun  │ │Combat   │  ← Physics modules
+│Default  │ │NoClip   │ │WallRun  │  ← Logic Modules
 │Movement │ │Movement │ │Movement │
 └─────────┘ └─────────┘ └─────────┘
 ```
@@ -50,14 +53,16 @@ We follow the **Strategy Pattern** - movement modes (jump, wallrun, combat) are 
 **Before** (Monolithic):
 
 - 523 lines in PlayerController
-- 145-line UpdateVelocity method
-- Adding wallrun = modifying core physics (high risk!)
+- Mixed Input, Physics, and State logic
+- High complexity
 
-**After** (Modular):
+**After** (Logic-Free):
 
-- 240 lines in PlayerController (54% reduction)
-- 3-line UpdateVelocity (just delegates)
-- Adding wallrun = create new file (zero risk!)
+- ~140 lines effective logic
+- **Zero** physics math in Controller
+- `NoClip` logic extracted to module
+- `Camera` logic extracted to static processor
+- `KCC` boilerplate extracted to Adapter
 
 ---
 
@@ -144,8 +149,13 @@ Inherits from `MovementModuleBase` and composes `JumpHandler`:
 
 - Ground movement (stable surfaces)
 - Air movement (acceleration, drag, gravity)
+- Rotation logic (look at camera)
 - Crouch/uncrouch with collision detection
 - Delegates jumping to `JumpHandler`
+
+#### `NoClipMovement` Module
+
+Handles debug flying mode. Isolated from main controller.
 
 **Public API**:
 
@@ -368,10 +378,15 @@ public DefaultMovement(
 - `DefaultMovement` module (315 lines)
 - `PlayerMovementSystem` manager (145 lines)
 
-**Changed**:
+### [2024-12-10] Logic-Free Controller Refactor 🧘
 
-- 3-line UpdateVelocity (just delegates)
-- Adding wallrun = create new file (zero risk!)
+**Complete Architecture Overhaul**:
+
+- **PlayerController**: Stripped of ALL physics/math logic. Now purely coordinates components.
+- **PlayerKCCAdapter**: Created to hide `ICharacterController` boilerplate.
+- **NoClipMovement**: Extracted NoClip logic into its own module.
+- **CameraInputProcessor**: Extracted camera-relative input math.
+- **Result**: Controller is now a declarative manager.
 
 ### [2024-12-09] Jump System Refactor 🦘
 
