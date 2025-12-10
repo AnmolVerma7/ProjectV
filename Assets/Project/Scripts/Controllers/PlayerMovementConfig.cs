@@ -47,6 +47,25 @@ namespace Antigravity.Controllers
         [Tooltip("If true, pressing Sprint toggles it on/off. If false, hold is required.")]
         public bool ToggleSprint = true;
 
+        [Tooltip("If true, pressing Crouch toggles it on/off. If false, hold is required.")]
+        public bool ToggleCrouch = false; // Default: Hold (traditional FPS)
+
+        [Header("Slide")]
+        [Tooltip("Base slide speed before slope modifiers.")]
+        public float BaseSlideSpeed = 12f;
+
+        [Tooltip("How much slope angle affects slide speed (higher = more influence).")]
+        public float SlideGravityInfluence = 5f;
+
+        [Tooltip("Friction rate during slide (higher = faster deceleration).")]
+        public float SlideFriction = 0.8f;
+
+        [Tooltip("Minimum speed to maintain slide (auto-exit if slower).")]
+        public float MinSlideSpeedToMaintain = 3f;
+
+        [Tooltip("Max slide duration in seconds (0 = infinite, speed-based only).")]
+        public float MaxSlideDuration = 0f;
+
         [Header("Air Movement")]
         public float MaxAirMoveSpeed = 10f;
         public float AirAccelerationSpeed = 5f;

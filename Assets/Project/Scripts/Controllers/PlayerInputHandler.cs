@@ -60,6 +60,9 @@ namespace Antigravity.Controllers
         private bool _noclipTriggered;
         private bool _dashTriggered;
 
+        // Crouch toggle state (mirror sprint logic)
+        private bool _crouchToggledOn;
+
         #endregion
 
         #region Public Accessors
@@ -98,6 +101,13 @@ namespace Antigravity.Controllers
         /// <summary>True for ONE frame when dash is pressed.</summary>
         public bool DashJustActivated => _dashTriggered;
 
+        /// <summary>True if crouch is currently active (handles both Toggle and Hold modes).</summary>
+        public bool IsCrouching =>
+            (_config != null && _config.ToggleCrouch) ? _crouchToggledOn : _crouchPressed;
+
+        /// <summary>True for ONE frame when crouch became active.</summary>
+        public bool CrouchJustActivated { get; private set; }
+
         #endregion
 
         /// <inheritdoc />
@@ -130,11 +140,11 @@ namespace Antigravity.Controllers
                 .Release(() => _jumpPressed = false)
                 .Register();
 
-            // Crouch
+            // Crouch (with toggle/hold support)
             builder
                 .Bind(builder.Actions.Crouch)
-                .Press(() => _crouchPressed = true)
-                .Release(() => _crouchPressed = false)
+                .Press(OnCrouchPress)
+                .Release(OnCrouchRelease)
                 .Register();
 
             // Rewind
@@ -222,6 +232,7 @@ namespace Antigravity.Controllers
             // Reset one-frame triggers
             _jumpTriggered = false;
             SprintJustActivated = false;
+            CrouchJustActivated = false;
             _dashTriggered = false;
             _noclipTriggered = false;
             _lookDelta = Vector2.zero;
@@ -255,6 +266,33 @@ namespace Antigravity.Controllers
 
             // Toggle mode ignores release
             // Hold mode uses _sprintHeld prop
+        }
+
+        private void OnCrouchPress()
+        {
+            _crouchPressed = true;
+            bool toggleMode = _config != null ? _config.ToggleCrouch : false;
+
+            if (toggleMode)
+            {
+                // Toggle mode: flip state regardless of movement
+                _crouchToggledOn = !_crouchToggledOn;
+                if (_crouchToggledOn)
+                    CrouchJustActivated = true;
+            }
+            else
+            {
+                // Hold mode: activated on press
+                CrouchJustActivated = true;
+            }
+        }
+
+        private void OnCrouchRelease()
+        {
+            _crouchPressed = false;
+
+            // Toggle mode ignores release
+            // Hold mode uses _crouchPressed prop
         }
     }
 }

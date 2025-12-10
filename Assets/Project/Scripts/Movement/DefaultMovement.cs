@@ -37,6 +37,10 @@ namespace Antigravity.Movement
         private int _currentDashCharges;
         private float _dashReloadTimer;
 
+        // Slide State
+        private bool _isSliding;
+        private float _slideTimer; // Track duration
+        private Vector3 _slideDirection; // Locked at slide start
         #endregion
 
         #region Constructor
@@ -124,10 +128,13 @@ namespace Antigravity.Movement
             // 1. Jump cleanup
             _jumpHandler.PostUpdate(deltaTime);
 
-            // 2. Crouch handling
+            // 2. Slide entry/exit handling
+            HandleSlide();
+
+            // 3. Crouch handling
             HandleCrouch();
 
-            // 3. Dash Charge Logic
+            // 4. Dash Charge Logic
             HandleDashCharges(deltaTime);
         }
 
@@ -152,12 +159,21 @@ namespace Antigravity.Movement
 
         public int CurrentDashCharges => _currentDashCharges;
 
+        public bool IsSliding => _isSliding;
+
         #endregion
 
         #region Movement Helper Methods
 
         private void ApplyGroundMovement(ref Vector3 currentVelocity, float deltaTime)
         {
+            // SLIDE CHECK: Override normal movement if sliding
+            if (_isSliding)
+            {
+                ApplySlidePhysics(ref currentVelocity, deltaTime);
+                return; // Skip normal ground movement
+            }
+
             currentVelocity =
                 Motor.GetDirectionTangentToSurface(
                     currentVelocity,
@@ -194,24 +210,51 @@ namespace Antigravity.Movement
 
             if (_moveInputVector.sqrMagnitude > 0f)
             {
-                Vector3 targetVelocity = _moveInputVector * Config.MaxAirMoveSpeed;
+                // KCC Improvement: Better air velocity cap (prevents bunny-hop exploits)
+                Vector3 addedVelocity = _moveInputVector * Config.AirAccelerationSpeed * deltaTime;
+                Vector3 currentVelocityOnInputsPlane = Vector3.ProjectOnPlane(
+                    currentVelocity,
+                    Motor.CharacterUp
+                );
 
+                // Cap air velocity more precisely
+                if (currentVelocityOnInputsPlane.magnitude < Config.MaxAirMoveSpeed)
+                {
+                    // Clamp total velocity to not exceed max
+                    Vector3 newTotal = Vector3.ClampMagnitude(
+                        currentVelocityOnInputsPlane + addedVelocity,
+                        Config.MaxAirMoveSpeed
+                    );
+                    addedVelocity = newTotal - currentVelocityOnInputsPlane;
+                }
+                else
+                {
+                    // Don't allow acceleration in direction of already-exceeding velocity
+                    if (Vector3.Dot(currentVelocityOnInputsPlane, addedVelocity) > 0f)
+                    {
+                        addedVelocity = Vector3.ProjectOnPlane(
+                            addedVelocity,
+                            currentVelocityOnInputsPlane.normalized
+                        );
+                    }
+                }
+
+                // KCC Improvement: Better air wall prevention
                 if (Motor.GroundingStatus.FoundAnyGround)
                 {
-                    Vector3 obstructionNormal = Vector3
+                    Vector3 perpenticularObstructionNormal = Vector3
                         .Cross(
                             Vector3.Cross(Motor.CharacterUp, Motor.GroundingStatus.GroundNormal),
                             Motor.CharacterUp
                         )
                         .normalized;
-                    targetVelocity = Vector3.ProjectOnPlane(targetVelocity, obstructionNormal);
+                    addedVelocity = Vector3.ProjectOnPlane(
+                        addedVelocity,
+                        perpenticularObstructionNormal
+                    );
                 }
 
-                Vector3 velocityDiff = Vector3.ProjectOnPlane(
-                    targetVelocity - currentVelocity,
-                    Config.Gravity
-                );
-                currentVelocity += velocityDiff * Config.AirAccelerationSpeed * deltaTime;
+                currentVelocity += addedVelocity;
             }
 
             currentVelocity += Config.Gravity * deltaTime;
@@ -320,6 +363,124 @@ namespace Antigravity.Movement
             _isCrouching = true;
             Motor.SetCapsuleDimensions(0.5f, 1f, 0.5f);
             _meshRoot.localScale = new Vector3(1f, 0.5f, 1f);
+        }
+
+        #endregion
+
+        #region Slide Helper Methods
+
+        /// <summary>
+        /// Manages slide entry/exit based on input state transitions.
+        /// </summary>
+        private void HandleSlide()
+        {
+            // Entry: Sprint → Crouch (while moving and grounded)
+            if (_input.CrouchJustActivated && !_isSliding)
+            {
+                TryEnterSlide(); // Only succeeds if conditions met
+            }
+
+            // Exit conditions (already in slide)
+            if (_isSliding)
+            {
+                // Exit if jumping
+                if (Motor.GroundingStatus.FoundAnyGround == false)
+                {
+                    ExitSlide();
+                }
+                // Exit if sprint released (unless crouch toggle keeps us crouched)
+                else if (!_input.IsSprinting)
+                {
+                    ExitSlide();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Attempts to enter slide state. Only triggers from Sprint → Crouch when moving.
+        /// </summary>
+        private bool TryEnterSlide()
+        {
+            // Requirements:
+            // 1. Must be sprinting
+            // 2. Must be moving (velocity > threshold)
+            // 3. Must be grounded
+            // 4. Not already crouching (prevents Crouch→Sprint inadvertent slide)
+            bool canSlide =
+                _input.IsSprinting
+                && Motor.Velocity.magnitude > Config.MinSlideSpeedToMaintain
+                && Motor.GroundingStatus.IsStableOnGround
+                && !_isCrouching; // Critical: Prevents Crouch→Sprint from sliding
+
+            if (canSlide)
+            {
+                _isSliding = true;
+                _slideDirection = Motor.Velocity.normalized; // Lock direction at slide start
+                _slideTimer = 0f;
+                EnterCrouch(); // Set crouch capsule dimensions
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Exits slide state. Stays crouched if user still holding crouch.
+        /// </summary>
+        private void ExitSlide()
+        {
+            _isSliding = false;
+            _slideTimer = 0f;
+
+            // Stay crouched if user still holding crouch button
+            if (!_input.IsCrouching)
+            {
+                TryUncrouch();
+            }
+        }
+
+        /// <summary>
+        /// Applies surface-aware slide physics (slope modifies speed).
+        /// </summary>
+        private void ApplySlidePhysics(ref Vector3 currentVelocity, float deltaTime)
+        {
+            // 1. Get slope info
+            Vector3 groundNormal = Motor.GroundingStatus.GroundNormal;
+            float slopeAngle = Vector3.Angle(Motor.CharacterUp, groundNormal);
+
+            // 2. Calculate slide direction (project along slope)
+            Vector3 slopeDirection = Vector3
+                .ProjectOnPlane(_slideDirection, groundNormal)
+                .normalized;
+
+            // 3. Calculate speed modifier based on slope
+            float slopeInfluence =
+                Mathf.Sign(Vector3.Dot(slopeDirection, -Motor.CharacterUp)) * slopeAngle; // +angle downhill, -angle uphill
+            float speedModifier =
+                Config.BaseSlideSpeed + (Config.SlideGravityInfluence * slopeInfluence / 90f); // Normalize to 90° scale
+
+            // 4. Target velocity
+            Vector3 targetVelocity = slopeDirection * speedModifier;
+
+            // 5. Apply friction (gradual deceleration/acceleration)
+            currentVelocity = Vector3.Lerp(
+                currentVelocity,
+                targetVelocity,
+                Config.SlideFriction * deltaTime
+            );
+
+            // 6. Auto-exit if too slow
+            if (currentVelocity.magnitude < Config.MinSlideSpeedToMaintain)
+            {
+                ExitSlide();
+                return;
+            }
+
+            // 7. Max duration check (if set)
+            _slideTimer += deltaTime;
+            if (Config.MaxSlideDuration > 0 && _slideTimer >= Config.MaxSlideDuration)
+            {
+                ExitSlide();
+            }
         }
 
         #endregion

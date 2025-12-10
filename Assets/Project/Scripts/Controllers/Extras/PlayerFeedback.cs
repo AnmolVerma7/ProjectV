@@ -1,4 +1,5 @@
 using Antigravity.Controllers;
+using Antigravity.Movement;
 using KinematicCharacterController;
 using UnityEngine;
 
@@ -30,6 +31,7 @@ namespace Antigravity.Feedback
         public Color NormalColor = Color.white;
         public Color SprintColor = Color.cyan;
         public Color DashColor = Color.red;
+        public Color SlideColor = new Color(1f, 0.65f, 0f); // Orange
 
         [Tooltip("How long the red dash color persists.")]
         public float DashVisualDuration = 0.5f;
@@ -45,6 +47,7 @@ namespace Antigravity.Feedback
 
         private float _dashTimer;
         private PlayerController _controller; // To access charges
+        private DefaultMovement _defaultMovement; // To access slide state
         #endregion
 
         #region Unity Lifecycle
@@ -58,6 +61,29 @@ namespace Antigravity.Feedback
                 TargetCamera = Camera.main;
 
             _controller = GetComponent<PlayerController>();
+
+            // Get DefaultMovement from PlayerController's movement system
+            if (_controller != null)
+            {
+                var movementSystem = _controller
+                    .GetType()
+                    .GetField(
+                        "_movementSystem",
+                        System.Reflection.BindingFlags.NonPublic
+                            | System.Reflection.BindingFlags.Instance
+                    )
+                    ?.GetValue(_controller);
+
+                if (movementSystem != null)
+                {
+                    _defaultMovement =
+                        movementSystem
+                            .GetType()
+                            .GetMethod("GetModule")
+                            .MakeGenericMethod(typeof(DefaultMovement))
+                            .Invoke(movementSystem, null) as DefaultMovement;
+                }
+            }
 
             // Auto-find a renderer if not assigned (MeshRoot or self)
             if (TargetRenderer == null)
@@ -89,7 +115,10 @@ namespace Antigravity.Feedback
             {
                 Color targetColor = NormalColor;
 
-                if (_dashTimer > 0)
+                // Priority: Slide > Dash > Sprint
+                if (_defaultMovement != null && _defaultMovement.IsSliding)
+                    targetColor = SlideColor;
+                else if (_dashTimer > 0)
                     targetColor = DashColor;
                 else if (isSprinting)
                     targetColor = SprintColor;
@@ -137,7 +166,9 @@ namespace Antigravity.Feedback
             GUILayout.Label($"H-Speed: {horizontalSpeed:F1} m/s", style);
 
             string status = "OFF";
-            if (_dashTimer > 0)
+            if (_defaultMovement != null && _defaultMovement.IsSliding)
+                status = "SLIDE! 🏄";
+            else if (_dashTimer > 0)
                 status = "DASH! 💥";
             else if (InputHandler.IsSprinting)
                 status = "ON";
