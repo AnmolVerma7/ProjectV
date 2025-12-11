@@ -55,7 +55,7 @@ namespace Antigravity.Movement
                 TryUncrouch
             );
             _dashHandler = new DashHandler(config);
-            _mantleHandler = new MantleHandler(motor, config);
+            _mantleHandler = new MantleHandler(motor, config, input);
         }
 
         #endregion

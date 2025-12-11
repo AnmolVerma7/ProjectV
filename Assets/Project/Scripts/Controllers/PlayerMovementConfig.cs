@@ -181,6 +181,16 @@ namespace Antigravity.Controllers
             new Keyframe(1f, 1f, 2f, 0f) // End slow, decelerate
         );
 
+        [Header("Shimmy")]
+        [Tooltip("Horizontal speed while shimmying along ledge.")]
+        public float ShimmySpeed = 2.0f;
+
+        [Tooltip("Distance to check ahead for ledge continuation.")]
+        public float ShimmyCheckDistance = 0.5f;
+
+        [Tooltip("Minimum input threshold to start shimmy (dead zone).")]
+        public float ShimmyInputThreshold = 0.3f;
+
         // ═══════════════════════════════════════════════════════════════════════
         // PHYSICS
         // ═══════════════════════════════════════════════════════════════════════
