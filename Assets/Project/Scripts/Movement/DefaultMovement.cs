@@ -12,6 +12,18 @@ namespace Antigravity.Movement
     /// </summary>
     public class DefaultMovement : MovementModuleBase
     {
+        // ═══════════════════════════════════════════════════════════════════════
+        // MAGIC NUMBERS - TODO: Move to config
+        // ═══════════════════════════════════════════════════════════════════════
+        private const float DASH_VELOCITY_THRESHOLD = 0.1f; // Min velocity to use velocity-based dash direction
+        private const float AIR_SPEED_DECAY_SHARPNESS = 10f; // Decay rate when over max air speed (lower = more momentum)
+        private const float CROUCH_CAPSULE_RADIUS = 0.5f;
+        private const float CROUCH_CAPSULE_HEIGHT = 1f;
+        private const float CROUCH_CAPSULE_Y_OFFSET = 0.5f;
+        private const float STANDING_CAPSULE_RADIUS = 0.5f;
+        private const float STANDING_CAPSULE_HEIGHT = 2f;
+        private const float STANDING_CAPSULE_Y_OFFSET = 1f;
+
         #region Additional Dependencies
 
         private readonly PlayerInputHandler _input;
@@ -227,7 +239,16 @@ namespace Antigravity.Movement
                 * _moveInputVector.magnitude;
 
             // Dash Logic (Ground) ⚡️
-            _dashHandler.TryApplyDash(ref _internalVelocityAdd, reorientedInput.normalized);
+            // Use character forward (facing direction) for more intuitive ground dash
+            Vector3 dashDirection = Motor.CharacterForward;
+            if (currentVelocity.sqrMagnitude > DASH_VELOCITY_THRESHOLD)
+            {
+                // If moving, use velocity direction instead
+                dashDirection = Vector3
+                    .ProjectOnPlane(currentVelocity, Motor.CharacterUp)
+                    .normalized;
+            }
+            _dashHandler.TryApplyDash(ref _internalVelocityAdd, dashDirection);
 
             float targetSpeed = _input.IsSprinting
                 ? Config.MaxSprintMoveSpeed
@@ -318,7 +339,7 @@ namespace Antigravity.Movement
                 currentVelocity = Vector3.Lerp(
                     currentVelocity,
                     targetVelocity,
-                    1 - Mathf.Exp(-5f * deltaTime)
+                    1 - Mathf.Exp(-AIR_SPEED_DECAY_SHARPNESS * deltaTime)
                 );
             }
 
@@ -368,7 +389,11 @@ namespace Antigravity.Movement
 
         private void TryUncrouch()
         {
-            Motor.SetCapsuleDimensions(0.5f, 2f, 1f);
+            Motor.SetCapsuleDimensions(
+                STANDING_CAPSULE_RADIUS,
+                STANDING_CAPSULE_HEIGHT,
+                STANDING_CAPSULE_Y_OFFSET
+            );
 
             if (
                 Motor.CharacterOverlap(
@@ -380,7 +405,11 @@ namespace Antigravity.Movement
                 ) > 0
             )
             {
-                Motor.SetCapsuleDimensions(0.5f, 1f, 0.5f);
+                Motor.SetCapsuleDimensions(
+                    STANDING_CAPSULE_RADIUS,
+                    STANDING_CAPSULE_HEIGHT,
+                    STANDING_CAPSULE_Y_OFFSET
+                );
             }
             else
             {
@@ -395,7 +424,11 @@ namespace Antigravity.Movement
                 return;
 
             _isCrouching = true;
-            Motor.SetCapsuleDimensions(0.5f, 1f, 0.5f);
+            Motor.SetCapsuleDimensions(
+                CROUCH_CAPSULE_RADIUS,
+                CROUCH_CAPSULE_HEIGHT,
+                CROUCH_CAPSULE_Y_OFFSET
+            );
             // Visual handled by animation
         }
 
