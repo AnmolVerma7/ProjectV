@@ -18,6 +18,7 @@ namespace Antigravity.Movement
         private bool _isSliding;
         private float _slideTimer;
         private Vector3 _slideDirection;
+        private float _initialSlideSpeed; // Captured at slide start (with boost)
         private bool _pendingSlideEntry;
         private float _lastSlideExitTime = -999f; // Allow immediate slide on start
 
@@ -134,7 +135,7 @@ namespace Antigravity.Movement
             float currentSpeed = _motor.Velocity.magnitude;
             bool canSlide =
                 _input.IsSprinting
-                && currentSpeed > 1f
+                && currentSpeed > _config.MinSlideEntrySpeed
                 && _motor.GroundingStatus.IsStableOnGround
                 && !_isCrouchingGetter()
                 && (UnityEngine.Time.time >= _lastSlideExitTime + _config.SlideCooldown);
@@ -144,6 +145,7 @@ namespace Antigravity.Movement
                 _isSliding = true;
                 _slideDirection = _motor.Velocity.normalized;
                 _slideTimer = 0f;
+                _initialSlideSpeed = currentSpeed * _config.SlideSpeedBoost;
                 _enterCrouchAction();
                 return true;
             }
@@ -164,42 +166,74 @@ namespace Antigravity.Movement
         }
 
         /// <summary>
-        /// Applies surface-aware slide physics. Slopes modify speed.
+        /// Applies momentum-based slide physics with friction curve and steering.
         /// </summary>
         public void ApplySlidePhysics(ref Vector3 currentVelocity, float deltaTime)
         {
             _slideTimer += deltaTime;
 
-            // Calculate slope influence on speed
-            Vector3 groundNormal = _motor.GroundingStatus.GroundNormal;
-            float slopeAngle = Vector3.Angle(groundNormal, _motor.CharacterUp);
-            Vector3 slopeDirection = Vector3
-                .ProjectOnPlane(-_motor.CharacterUp, groundNormal)
-                .normalized;
-            float slopeDot = Vector3.Dot(_slideDirection, slopeDirection);
-            float slopeInfluence = slopeDot * (slopeAngle / 90f) * _config.SlideGravityInfluence;
+            // 1. Calculate slide progress and apply friction curve
+            float slideProgress = Mathf.Clamp01(_slideTimer / _config.MaxSlideDuration);
+            float frictionFactor = _config.SlideFrictionCurve.Evaluate(slideProgress);
+            float currentSlideSpeed = _initialSlideSpeed * frictionFactor;
 
-            // Calculate and apply speed with friction
-            float targetSpeed = Mathf.Max(_config.BaseSlideSpeed + slopeInfluence, 0f);
-            float newSpeed = Mathf.Lerp(
-                currentVelocity.magnitude,
-                targetSpeed,
-                _config.SlideFriction * deltaTime
-            );
+            // 2. Apply slope influence (faster downhill, slower uphill)
+            if (_motor.GroundingStatus.FoundAnyGround)
+            {
+                Vector3 groundNormal = _motor.GroundingStatus.GroundNormal;
+                Vector3 slopeDirection = Vector3
+                    .ProjectOnPlane(-_motor.CharacterUp, groundNormal)
+                    .normalized;
+                float slopeFactor = Vector3.Dot(_slideDirection, slopeDirection);
+                currentSlideSpeed += slopeFactor * _config.SlopeInfluence * 5f;
+                currentSlideSpeed = Mathf.Max(currentSlideSpeed, _config.MinSlideExitSpeed * 0.8f);
+            }
 
-            // Exit conditions
-            if (newSpeed < _config.MinSlideSpeedToMaintain)
+            // 3. Exit conditions
+            if (_slideTimer >= _config.MaxSlideDuration)
             {
                 ExitSlide();
                 return;
             }
-            if (_config.MaxSlideDuration > 0f && _slideTimer >= _config.MaxSlideDuration)
+            if (currentSlideSpeed < _config.MinSlideExitSpeed)
             {
                 ExitSlide();
                 return;
             }
 
-            currentVelocity = _slideDirection * newSpeed;
+            // 4. Calculate slide velocity
+            Vector3 slideVelocity = _slideDirection * currentSlideSpeed;
+
+            // 5. Apply player steering
+            if (_input.MoveInput.magnitude > 0.1f)
+            {
+                Vector3 steerInput =
+                    (
+                        _motor.CharacterRight * _input.MoveInput.x
+                        + _motor.CharacterForward * _input.MoveInput.y
+                    ) * _config.SlideSteerStrength;
+                Vector3 lateralSteer = Vector3.Project(
+                    steerInput,
+                    Vector3.Cross(_motor.CharacterUp, _slideDirection)
+                );
+                slideVelocity += lateralSteer * deltaTime;
+
+                // Update slide direction to match new velocity
+                if (slideVelocity.magnitude > 0.1f)
+                    _slideDirection = slideVelocity.normalized;
+            }
+
+            // 6. Project to ground plane and set final velocity
+            if (_motor.GroundingStatus.FoundAnyGround)
+            {
+                slideVelocity =
+                    _motor.GetDirectionTangentToSurface(
+                        slideVelocity,
+                        _motor.GroundingStatus.GroundNormal
+                    ) * slideVelocity.magnitude;
+            }
+
+            currentVelocity = slideVelocity;
         }
     }
 }

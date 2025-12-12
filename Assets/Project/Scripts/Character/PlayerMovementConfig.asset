@@ -21,7 +21,7 @@ MonoBehaviour:
   ToggleSprint: 1
   ToggleCrouch: 0
   ToggleSlide: 0
-  SlideHoldDelay: 0.2
+  SlideHoldDelay: 0.15
   SlideCooldown: 0.5
   BaseSlideSpeed: 12
   SlideGravityInfluence: 5
@@ -45,10 +45,10 @@ MonoBehaviour:
   NoClipSharpness: 15
   MantleLayers:
     serializedVersion: 2
-    m_Bits: 256
+    m_Bits: 4294967295
   MaxGrabDistance: 1
   MinLedgeHeight: 1
-  MaxLedgeHeight: 4
+  MaxLedgeHeight: 2
   MantleDuration: 0.55
   MantleCurve:
     serializedVersion: 2
@@ -83,5 +83,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  ShimmySpeed: 5
+  ShimmyCheckDistance: 1
+  ShimmyInputThreshold: 0.2
   OrientTowardsGravity: 0
   Gravity: {x: 0, y: -25, z: 0}

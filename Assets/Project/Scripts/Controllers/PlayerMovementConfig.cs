@@ -56,9 +56,9 @@ namespace Antigravity.Controllers
         // SLIDE
         // ═══════════════════════════════════════════════════════════════════════
 
-        [Header("Slide")]
+        [Header("Slide - Entry")]
         [Tooltip(
-            "If true, slide continues until speed/sprint loss. If false, releasing crouch exits slide."
+            "If true, slide continues until speed loss. If false, releasing crouch exits slide."
         )]
         public bool ToggleSlide = false;
 
@@ -70,20 +70,27 @@ namespace Antigravity.Controllers
         [Tooltip("Minimum time (seconds) to wait before sliding again.")]
         public float SlideCooldown = 0.5f;
 
-        [Tooltip("Base slide speed before slope modifiers.")]
-        public float BaseSlideSpeed = 12f;
+        [Tooltip("Minimum speed required to initiate a slide.")]
+        public float MinSlideEntrySpeed = 1f;
 
-        [Tooltip("How much slope angle affects slide speed (higher = more influence).")]
-        public float SlideGravityInfluence = 5f;
+        [Header("Slide - Momentum Physics")]
+        [Tooltip("Speed multiplier applied at the start of the slide (burst of speed).")]
+        public float SlideSpeedBoost = 1.2f;
 
-        [Tooltip("Friction rate during slide (higher = faster deceleration).")]
-        public float SlideFriction = 0.8f;
+        [Tooltip("Maximum time (in seconds) a slide can last.")]
+        public float MaxSlideDuration = 1.5f;
 
-        [Tooltip("Minimum speed to maintain slide (auto-exit if slower).")]
-        public float MinSlideSpeedToMaintain = 3f;
+        [Tooltip("Curve controlling how slide speed falls off over time (0=start at 100%, 1=end).")]
+        public AnimationCurve SlideFrictionCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0.3f);
 
-        [Tooltip("Max slide duration in seconds (0 = infinite, speed-based only).")]
-        public float MaxSlideDuration = 0f;
+        [Tooltip("How strongly slope affects the slide speed (positive = downhill boost).")]
+        public float SlopeInfluence = 0.5f;
+
+        [Tooltip("How much the player can steer left/right while sliding.")]
+        public float SlideSteerStrength = 2f;
+
+        [Tooltip("If speed falls below this, the slide will auto-exit.")]
+        public float MinSlideExitSpeed = 2f;
 
         // ═══════════════════════════════════════════════════════════════════════
         // DASH
