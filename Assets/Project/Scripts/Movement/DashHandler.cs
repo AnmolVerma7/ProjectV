@@ -52,18 +52,16 @@ namespace Antigravity.Movement
         /// </summary>
         public void UpdateCharges(float deltaTime)
         {
-            // Tick Intermission (cooldown between consecutive dashes)
             if (_dashAuthenticationTimer > 0)
                 _dashAuthenticationTimer -= deltaTime;
 
-            // Reload Logic (regenerate charges)
             if (_currentDashCharges < _config.MaxDashCharges)
             {
                 _dashReloadTimer += deltaTime;
                 if (_dashReloadTimer >= _config.DashReloadTime)
                 {
                     _currentDashCharges++;
-                    _dashReloadTimer = 0f; // Reset for next charge
+                    _dashReloadTimer = 0f;
                 }
             }
             else
@@ -78,12 +76,6 @@ namespace Antigravity.Movement
         /// </summary>
         public bool TryApplyDash(ref Vector3 velocityAdd, Vector3 direction)
         {
-            // Requirements:
-            // 1. Pending request
-            // 2. Off "Intermission" cooldown
-            // 3. Has charges
-            // 4. Moving (has direction)
-
             if (
                 _pendingDash
                 && _dashAuthenticationTimer <= 0
@@ -91,22 +83,13 @@ namespace Antigravity.Movement
                 && direction.sqrMagnitude > 0
             )
             {
-                // Apply impulse
                 velocityAdd += direction * _config.DashForce;
-
-                // Consume charge
                 _currentDashCharges--;
-
-                // Set intermission (prevent spamming multiple dashes in 1 frame)
                 _dashAuthenticationTimer = _config.DashIntermissionTime;
-
-                // Clear pending flag
                 _pendingDash = false;
-
                 return true;
             }
 
-            // Clear pending flag even if dash didn't trigger
             _pendingDash = false;
             return false;
         }
