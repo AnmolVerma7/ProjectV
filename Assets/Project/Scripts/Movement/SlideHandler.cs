@@ -104,10 +104,7 @@ namespace Antigravity.Movement
 
                 if (_config.ToggleSlide)
                 {
-                    // Toggle Mode Exits:
-                    // - Jump (Handled above)
-                    // - Crouch Press (Handled above)
-                    // - Speed Loss (Handled in ApplySlidePhysics via MinSlideSpeedToMaintain)
+                    // Toggle Mode: exits via crouch press (handled above) or speed loss
                 }
                 else
                 {
@@ -130,37 +127,24 @@ namespace Antigravity.Movement
         }
 
         /// <summary>
-        /// Attempts to enter slide state. Only triggers from Sprint → Crouch when moving.
+        /// Attempts to enter slide state. Only triggers from Sprint + Crouch when moving.
         /// </summary>
         private bool TryEnterSlide()
         {
-            // Requirements:
-            // 1. Must be sprinting
-            // 2. Must be moving (velocity > low threshold for entry)
-            // 3. Must be grounded
-            // 4. Not already crouching (prevents Crouch→Sprint inadvertent slide)
-            // 5. Not on cooldown
-
             float currentSpeed = _motor.Velocity.magnitude;
-            bool isSprinting = _input.IsSprinting;
-            bool isGrounded = _motor.GroundingStatus.IsStableOnGround;
-            bool notCrouching = !_isCrouchingGetter();
-
-            // Use a LOW threshold for entry (1 m/s = barely moving)
-            // We'll use the higher MinSlideSpeedToMaintain for EXIT
             bool canSlide =
-                isSprinting
-                && currentSpeed > 1f // Lower threshold for entry
-                && isGrounded
-                && notCrouching // Critical: Prevents Crouch→Sprint from sliding
-                && (UnityEngine.Time.time >= _lastSlideExitTime + _config.SlideCooldown); // Cooldown check
+                _input.IsSprinting
+                && currentSpeed > 1f
+                && _motor.GroundingStatus.IsStableOnGround
+                && !_isCrouchingGetter()
+                && (UnityEngine.Time.time >= _lastSlideExitTime + _config.SlideCooldown);
 
             if (canSlide)
             {
                 _isSliding = true;
-                _slideDirection = _motor.Velocity.normalized; // Lock direction at slide start
+                _slideDirection = _motor.Velocity.normalized;
                 _slideTimer = 0f;
-                _enterCrouchAction(); // Set crouch capsule dimensions
+                _enterCrouchAction();
                 return true;
             }
             return false;
@@ -173,69 +157,48 @@ namespace Antigravity.Movement
         {
             _isSliding = false;
             _slideTimer = 0f;
-            _lastSlideExitTime = UnityEngine.Time.time; // Record exit time for cooldown
+            _lastSlideExitTime = UnityEngine.Time.time;
 
-            // Stay crouched if user still holding crouch button
-            if (_input.IsCrouching)
-            {
-                // Do nothing, stay crouched
-            }
-            else
-            {
+            if (!_input.IsCrouching)
                 _tryUncrouchAction();
-            }
         }
 
         /// <summary>
-        /// Applies surface-aware slide physics (slope modifies speed).
-        /// Called from ApplyGroundMovement when IsSliding is true.
+        /// Applies surface-aware slide physics. Slopes modify speed.
         /// </summary>
         public void ApplySlidePhysics(ref Vector3 currentVelocity, float deltaTime)
         {
             _slideTimer += deltaTime;
 
-            // Get ground normal to detect slope
+            // Calculate slope influence on speed
             Vector3 groundNormal = _motor.GroundingStatus.GroundNormal;
-
-            // Calculate slope angle (0 = flat, 90 = vertical wall)
             float slopeAngle = Vector3.Angle(groundNormal, _motor.CharacterUp);
-
-            // Determine if we're going downhill or uphill
-            // Dot product of slide direction with "down-slope" direction
             Vector3 slopeDirection = Vector3
                 .ProjectOnPlane(-_motor.CharacterUp, groundNormal)
                 .normalized;
             float slopeDot = Vector3.Dot(_slideDirection, slopeDirection);
-
-            // Slope influence: positive = downhill boost, negative = uphill penalty
             float slopeInfluence = slopeDot * (slopeAngle / 90f) * _config.SlideGravityInfluence;
 
-            // Calculate target speed (base + slope modifier)
-            float targetSpeed = _config.BaseSlideSpeed + slopeInfluence;
-            targetSpeed = Mathf.Max(targetSpeed, 0f); // Never negative
+            // Calculate and apply speed with friction
+            float targetSpeed = Mathf.Max(_config.BaseSlideSpeed + slopeInfluence, 0f);
+            float newSpeed = Mathf.Lerp(
+                currentVelocity.magnitude,
+                targetSpeed,
+                _config.SlideFriction * deltaTime
+            );
 
-            // Current speed
-            float currentSpeed = currentVelocity.magnitude;
-
-            // Apply friction (slow down over time)
-            float friction = _config.SlideFriction;
-            float newSpeed = Mathf.Lerp(currentSpeed, targetSpeed, friction * deltaTime);
-
-            // Check for speed-based exit
+            // Exit conditions
             if (newSpeed < _config.MinSlideSpeedToMaintain)
             {
                 ExitSlide();
                 return;
             }
-
-            // Check for duration-based exit (if enabled)
             if (_config.MaxSlideDuration > 0f && _slideTimer >= _config.MaxSlideDuration)
             {
                 ExitSlide();
                 return;
             }
 
-            // Set velocity (maintain locked direction)
             currentVelocity = _slideDirection * newSpeed;
         }
     }

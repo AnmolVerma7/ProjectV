@@ -126,14 +126,11 @@ namespace Antigravity.Controllers
                 TimeManager.Instance.StopRewind();
             }
 
-            // Calculate Move Vector
+            // Camera-relative input
             _moveInputVector = CameraInputProcessor.GetCameraRelativeMoveVector(
                 InputHandler.MoveInput,
                 Camera.main
             );
-
-            // Pass input to ALL modules (since we don't know which is active easily without casting)
-            // Or better: pass to both. They are cheap to set.
             _defaultMovement.SetMoveInput(_moveInputVector);
             _noClipMovement.SetMoveInput(_moveInputVector);
 
@@ -149,22 +146,11 @@ namespace Antigravity.Controllers
                 _movementSystem.OnDashStarted();
             }
 
-            // Handle Slide (Sprint + Crouch = Slide)
-            // Handle Slide (Sprint + Crouch = Slide)
-            bool wantSlide = false;
-            if (Config.ToggleSlide)
-            {
-                // Toggle Mode: Instant trigger on press
-                wantSlide = InputHandler.CrouchJustActivated;
-            }
-            else
-            {
-                // Hold Mode: Only trigger after hold delay (prevents accidental slides)
-                // We check IsCrouching to ensure button is still down
-                wantSlide =
-                    InputHandler.IsCrouching
+            // Slide input
+            bool wantSlide = Config.ToggleSlide
+                ? InputHandler.CrouchJustActivated
+                : InputHandler.IsCrouching
                     && InputHandler.CrouchHoldDuration >= Config.SlideHoldDelay;
-            }
 
             if (_defaultMovement.IsMantling)
             {
@@ -181,25 +167,16 @@ namespace Antigravity.Controllers
                 _defaultMovement.RequestSlide();
             }
 
-            // Handle Jump Request
+            // Jump (or mantle confirm if hanging)
             if (InputHandler.JumpDown)
             {
-                // If hanging from a ledge, confirm mantle instead of jumping
                 if (_defaultMovement.IsMantling)
-                {
                     _defaultMovement.RequestMantleConfirm();
-                }
                 else
-                {
-                    // Only default movement cares about jump triggers usually
                     _defaultMovement.RequestJump();
-                }
             }
 
-            // Update HSM (observation only)
             _stateMachine.CurrentState.UpdateStates();
-
-            // Debug: Show current state hierarchy
             _currentStateDebug = GetCurrentStateHierarchy();
         }
 
