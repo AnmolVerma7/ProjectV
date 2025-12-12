@@ -20,14 +20,39 @@ MonoBehaviour:
   MaxSprintMoveSpeed: 15
   ToggleSprint: 1
   ToggleCrouch: 0
-  ToggleSlide: 0
+  ToggleSlide: 1
   SlideHoldDelay: 0.15
   SlideCooldown: 0.5
-  BaseSlideSpeed: 12
-  SlideGravityInfluence: 5
-  SlideFriction: 0.8
-  MinSlideSpeedToMaintain: 3
-  MaxSlideDuration: 0
+  MinSlideEntrySpeed: 10
+  SlideSpeedBoost: 1.3
+  MaxSlideDuration: 3
+  SlideFrictionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.3
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  SlopeInfluence: 0.5
+  SlideSteerStrength: 2
+  MinSlideExitSpeed: 2
   DashForce: 15
   DashIntermissionTime: 0.1
   MaxDashCharges: 3
@@ -47,8 +72,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   MaxGrabDistance: 1
-  MinLedgeHeight: 1
-  MaxLedgeHeight: 2
+  MinLedgeHeight: 0
+  MaxLedgeHeight: 3
   MantleDuration: 0.55
   MantleCurve:
     serializedVersion: 2
