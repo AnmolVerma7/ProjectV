@@ -208,11 +208,8 @@ namespace Antigravity.Movement
             _jumpedThisFrame = true;
             _timeSinceLastAbleToJump = Mathf.Infinity; // Invalidate Coyote Time immediately!
 
-            // 4. Notify Listeners (Audio/VFX/Animation)
+            // Notify listeners (Audio/VFX/Animation)
             OnJumpPerformed?.Invoke(type);
-
-            // Debug log for verification
-            // Debug.Log($"Jump Performed: {type} | AirJumps: {_airJumpsUsed}/{_maxAirJumps}");
         }
 
         #endregion

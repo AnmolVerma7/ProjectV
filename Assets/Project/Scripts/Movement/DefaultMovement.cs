@@ -147,10 +147,7 @@ namespace Antigravity.Movement
                 && _mantleHandler.CanGrab();
 
             if (tryGrabOnJump || tryGrabWhileFalling)
-            {
-                // Debug.Log("🧗 GRABBING LEDGE!");
                 _mantleHandler.TryGrab();
-            }
 
             // 4. Internal forces
             ApplyInternalVelocity(ref currentVelocity);

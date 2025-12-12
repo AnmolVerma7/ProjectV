@@ -99,19 +99,11 @@ namespace Antigravity.Movement
         /// </summary>
         public bool CanGrab()
         {
-            // Must not be already mantling
             if (IsActive)
-            {
-                // Debug.Log("Mantle: Already active");
                 return false;
-            }
 
-            // Must be in air (not grounded)
             if (_motor.GroundingStatus.IsStableOnGround)
-            {
-                // Debug.Log("Mantle: Grounded");
                 return false;
-            }
 
             // Check cooldown
             if (_dropCooldownTimer > 0f)
@@ -135,20 +127,14 @@ namespace Antigravity.Movement
                     QueryTriggerInteraction.Ignore
                 )
             )
-            {
-                // Debug.Log("Mantle: No wall detected");
                 return false;
-            }
 
             // Wall must be roughly vertical (not a slope or ceiling)
             // Vertical wall = 90° angle between normal and CharacterUp
             // Accept walls between 60° and 120° (within 30° of vertical)
             float wallAngle = Vector3.Angle(wallHit.normal, _motor.CharacterUp);
             if (wallAngle < 60f || wallAngle > 120f)
-            {
-                // Debug.Log($"Mantle: Wall not vertical enough ({wallAngle:F1}°)");
                 return false;
-            }
 
             // Check for ledge above (flat surface we can stand on)
             Vector3 ledgeCheckStart = wallHit.point + (_motor.CharacterUp * _config.MaxLedgeHeight);
@@ -164,21 +150,13 @@ namespace Antigravity.Movement
                     QueryTriggerInteraction.Ignore
                 )
             )
-            {
-                // Debug.Log("Mantle: No ledge top found");
                 return false;
-            }
 
             // Ledge must be walkable (check surface angle)
             float surfaceAngle = Vector3.Angle(ledgeHit.normal, _motor.CharacterUp);
-            if (surfaceAngle > 45f) // Max 45 degree slope
-            {
-                // Debug.Log($"Mantle: Surface too steep ({surfaceAngle:F1}°)");
+            if (surfaceAngle > 45f)
                 return false;
-            }
 
-            // Valid ledge found!
-            // Debug.Log("✅ Mantle: VALID LEDGE DETECTED!");
             return true;
         }
 
